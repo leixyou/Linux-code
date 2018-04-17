@@ -1,4 +1,11 @@
 /*
+ * ptraceTst.c
+ *
+ *  Created on: 2018年4月16日
+ *      Author: rodster
+ */
+
+/*
  * ptracetest.c
  *
  *  Created on: 2018年4月15日
@@ -30,7 +37,8 @@ int main(int argc, char const *argv[],char **envp)
 	handle_t h;
 	struct stat st;
 	long trap,orig;
-	int status,pid;
+	int status;
+	unsigned int pid;
 	char * args[2];
 
 	puts(argv[0]);
@@ -122,10 +130,11 @@ int main(int argc, char const *argv[],char **envp)
 		exit(0);
 	}
 	wait(&status);
-	printf("Beginning analysis of pid :%d at %lx\n",pid,h.symaddr );
-	if ((orig=ptrace(PTRACE_PEEKTEXT,pid,NULL,NULL))<0)
-	{
+	printf("Beginning analysis of pid :%u at %lx\n",pid,h.symaddr );
 
+	if ((orig=ptrace(PTRACE_PEEKTEXT,pid,h.symaddr,NULL))<0)
+	{
+		perror("errno");
 		perror("PTRACE_PEEKTEXT");
 		exit(-1);
 		/* code */
@@ -134,7 +143,6 @@ int main(int argc, char const *argv[],char **envp)
 	if (ptrace(PTRACE_POKETEXT,pid,h.symaddr,trap)<0)
 	{
 		perror("PTRACE_POKETEXT");
-		/* code */
 		exit(-1);
 	}
 
@@ -155,7 +163,7 @@ int main(int argc, char const *argv[],char **envp)
 			perror("PTRACE_GETREGS");
 			exit(-1);
 		}
-		printf("\n Executable %s (pid:%d) has hit breakpoint 0x%llx\n",h.exec,pid,h.symname);
+		printf("\n Executable %s (pid:%u) has hit breakpoint 0x%llx\n",h.exec,pid,h.symname);
 		printf("rcx: %llx\nrdx:%llx\nrbx: %llx\nrax:%llx \nrdi: %llx\nrsi:%llx\nr8: %llx\nr9: %llx\n r10:%llx\nr14:%llx \n r15:%llx\nrsp: %llx",h.pt_reg.rcx,h.pt_reg.rdx,h.pt_reg.rbx,h.pt_reg.rax,h.pt_reg.rdi,h.pt_reg.rsi,h.pt_reg.r8,h.pt_reg.r9,h.pt_reg.r10,h.pt_reg.r14,h.pt_reg.r15,h.pt_reg.rsp);
 		printf("\nPlease hit any key to continue:\n");
 		/* code */
@@ -189,7 +197,7 @@ int main(int argc, char const *argv[],char **envp)
 	}
 		if (WIFEXITED(status))
 		{
-			printf("Complete tracing pid :%d\n",pid);
+			printf("Complete tracing pid :%u\n",pid);
 			exit(0);
 		}
 
